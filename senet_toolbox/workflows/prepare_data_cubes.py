@@ -9,7 +9,7 @@ import logging
 from shapely.geometry import box
 from shapely import to_geojson
 from dateutil.relativedelta import relativedelta
-from eomaji.workflows import sentinel2_preprocessing
+from senet_toolbox.workflows import sentinel2_preprocessing
 
 logging.basicConfig(
     level=logging.INFO,

@@ -6,7 +6,7 @@ import xarray as xr
 import rasterio
 import rioxarray
 from pyDMS.pyDMS import DecisionTreeSharpener
-from eomaji.utils.raster_utils import gdal_to_xarray
+from senet_toolbox.utils.raster_utils import gdal_to_xarray
 
 logger = logging.getLogger(__name__)
 

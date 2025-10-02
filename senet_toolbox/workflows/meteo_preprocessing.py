@@ -13,7 +13,7 @@ from pyproj import Proj
 import cdsapi
 
 from meteo_utils import ecmwf_utils as eu, solar_irradiance as sun, dem_utils as du
-from eomaji.utils.general_utils import load_lut
+from senet_toolbox.utils.general_utils import load_lut
 
 logging.basicConfig(
     level=logging.INFO,

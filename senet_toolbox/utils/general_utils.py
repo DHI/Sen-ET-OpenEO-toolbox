@@ -4,13 +4,13 @@ import datetime
 from pathlib import Path
 import pandas as pd
 import importlib.resources as pkg_resources
-import eomaji.static_data
+import senet_toolbox.static_data
 
 
 def load_lut():
     """Loads the WorldCover10m lookup table from the package data directory."""
     with (
-        pkg_resources.files(eomaji.static_data)
+        pkg_resources.files(senet_toolbox.static_data)
         .joinpath("WorldCover10m_2020_LUT.csv")
         .open("r") as file
     ):

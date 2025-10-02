@@ -7,7 +7,7 @@ import numpy as np
 import rasterio
 import xarray as xr
 
-from eomaji.utils.general_utils import load_lut
+from senet_toolbox.utils.general_utils import load_lut
 
 logging.basicConfig(
     level=logging.INFO,

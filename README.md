@@ -1,7 +1,7 @@
 ![Project Status](https://img.shields.io/badge/Status-Development-yellow)
-[![GitHub last commit](https://img.shields.io/github/last-commit/DHI/EOMAJI-OpenEO-toolbox)](#)
+[![GitHub last commit](https://img.shields.io/github/last-commit/DHI/Sen-ET-OpenEO-toolbox)](#)
 
-# EOMAJI OpenEO Toolbox
+# Sen-ET OpenEO toolbox
 > ⚠️ **Note:** This project is under active development. Features may change and bugs may exist.
 
 This repository contains openEO workflows for various python modules used in Evapotranspiration (ET) modeling and Irrigation mapping. 
@@ -15,7 +15,7 @@ Following modules are currently included:
 1. Go to [https://jupyterhub.dataspace.copernicus.eu](https://jupyterhub.dataspace.copernicus.eu) and start a server
 2. In the server either upload the notebooks manually or clone this repo by opening a terminal and running
     ```
-    git clone https://github.com/DHI/EOMAJI-OpenEO-toolbox.git
+    git clone https://github.com/DHI/Sen-ET-OpenEO-toolbox.git
     ```
 3. Create a new clean kernel using the following commands in a terminal on Jupyterhub
     ```
@@ -23,15 +23,15 @@ Following modules are currently included:
     conda activate gdal_env \
     conda install -c conda-forge gdal \
     pip install ipykernel \
-    pip install eomaji@git+https://github.com/DHI/EOMAJI-OpenEO-toolbox.git \
-    python -m ipykernel install --user --name=gdal_env --display-name "EOMAJI Kernel" 
+    pip install senet_toolbox@git+https://github.com/DHI/Sen-ET-OpenEO-toolbox.git \
+    python -m ipykernel install --user --name=gdal_env --display-name "Sen-ET Kernel" 
     ```
-4. You can now select the "EOMAJI Kernel" kernel to run the notebooks
+4. You can now select the "Sen-ET Kernel" kernel to run the notebooks
 
   >💡**Note**: The package is installed in the first cell of the notebooks. You *should* be able run the notebooks out of the box without any additional setup if using a kernel with GDAL installed, but sometimes there can be conflics with existing packages in the environment. It is recommended to to a clean kernel installation
 
 ### Local Installation
-To install the EOMAJI OpenEO Toolbox locally, follow these steps:
+To install the Sen-ET OpenEO Toolbox locally, follow these steps:
 
 1. Install GDAL
 Make sure GDAL is installed on your system. This is a required dependency for geospatial data processing.
@@ -39,11 +39,11 @@ Make sure GDAL is installed on your system. This is a required dependency for ge
 2. Install the Toolbox from GitHub
 Once GDAL is installed, you can install the toolbox directly using pip:
     ```
-    pip install eomaji@git+https://github.com/DHI/EOMAJI-OpenEO-toolbox.git
+    pip install senet_toolbox@git+https://github.com/DHI/Sen-ET-OpenEO-toolbox.git
     ```
 
 ## Running the Evapotranspiration Workflow  
-The **notebooks** provided in the [`notebooks/`](./notebooks) folder demonstrate how to use the **EOMAJI OpenEO toolbox** for evapotranspiration modeling.  
+The **notebooks** provided in the [`notebooks/`](./notebooks) folder demonstrate how to use the **Sen-ET OpenEO toolbox** for evapotranspiration modeling.  
 
 These notebooks can be run directly on **Copernicus Data Space (CDSE) JupyterHub** for efficient processing and scalability.  
 
@@ -73,7 +73,7 @@ For setting up a development environment, you have two options:
     * Make sure GDAL is installed on your system.
     * Create a virtual environment and install the package with either pip or UV:
     ```sh
-        python -m venv eomaji-env
-        source eomaji-env/bin/activate # On Windows, use `eomaji-env\Scripts\activate`
+        python -m venv senet-env
+        source senet-env/bin/activate # On Windows, use `senet-env\Scripts\activate`
         pip install .
     ```
