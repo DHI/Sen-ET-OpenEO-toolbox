@@ -50,7 +50,7 @@ dependencies = [
     "ipyleaflet==0.20.0",
     "jupyter-leaflet==0.20.0",
     "ipywidgets>=8.0.6",
-    "gdal==3.8.4",
+    "gdal",
     "pytseb>=2.1.0",
     "meteo-utils>=2.1.0",
     "radiative-transfer-models>=1.5.1",
