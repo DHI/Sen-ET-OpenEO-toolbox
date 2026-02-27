@@ -6,6 +6,7 @@ import xarray as xr
 import rasterio
 import rioxarray
 from pyDMS.pyDMS import DecisionTreeSharpener
+import pyDMS.pyDMSUtils as utils
 from senet_toolbox.utils.raster_utils import gdal_to_xarray
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,10 @@ def run_decision_tree_sharpener(
         downscaled_image = disaggregator.applySharpener(
             highResFilename=high_res_file, lowResFilename=low_res_file
         )
+        # Residual analysis and correction
+        residual_image, corrected_image = disaggregator.residualAnalysis(downscaled_image, low_res_file,
+                                                                         low_res_mask_file,
+                                                                         doCorrection=True)
 
         # Cleanup temporary input files
         os.remove(high_res_file)
@@ -105,7 +110,17 @@ def run_decision_tree_sharpener(
 
         # If output_path is provided, save the file instead of returning an xarray
         if output_path:
-            downscaled_image.save(output_path)
+            print("Saving output...")
+            if corrected_image is not None:
+                out_image = corrected_image
+            else:
+                out_image = downscaled_image
+            # outData = utils.binomialSmoother(outData)
+            out_file = utils.saveImg(out_image.GetRasterBand(1).ReadAsArray(),
+                                     out_image.GetGeoTransform(),
+                                     out_image.GetProjection(),
+                                     output_path)
+            out_file = None
             logger.info(f"Downscaled image saved to {output_path}")
             return output_path  # Return the file path
 
