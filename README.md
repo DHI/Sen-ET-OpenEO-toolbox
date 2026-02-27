@@ -15,7 +15,7 @@ Following modules are currently included:
 1. Go to [https://jupyterhub.dataspace.copernicus.eu](https://jupyterhub.dataspace.copernicus.eu) and start a server
 2. In the server either upload the notebooks manually or clone this repo by opening a terminal and running
     ```
-    git clone https://github.com/DHI/Sen-ET-OpenEO-toolbox.git
+    git clone https://github.com/DHI/Sen-ET-OpenEO-toolbox.git mystorage/sen-et-toolbox
     ```
 3. Create a new clean kernel using the following commands in a terminal on Jupyterhub
     ```
