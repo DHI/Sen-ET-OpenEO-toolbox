@@ -215,6 +215,7 @@ def _estimate_param_value(
         lc_index = lut[lut["landcover_class"] == lc_class].index[0]
         param_value[lc_pixels] = lut[band][lc_index]
 
+    profile.update({"dtype": "float32"})
     with rasterio.open(output_path, "w", **profile) as dst:
         dst.write(param_value, 1)
 
@@ -251,7 +252,7 @@ def cw_to_nir_spectrum(
     tau_leaf_nir = watercloud_model(cw, *coeffs_wc_tau_nir)
 
     rho_leaf_nir = np.clip(rho_leaf_nir, 0, 1)
-    tau_leaf_nir = np.clip(rho_leaf_nir, 0, 1)
+    tau_leaf_nir = np.clip(tau_leaf_nir, 0, 1)
 
     return rho_leaf_nir, tau_leaf_nir
 
