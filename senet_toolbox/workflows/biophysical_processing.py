@@ -1,13 +1,14 @@
-import os
 import logging
 from pathlib import Path
-from typing import Union, List, Optional, Tuple
+import re
+from typing import Union, List
 
 import numpy as np
 import rasterio
 import xarray as xr
 
 from senet_toolbox.utils.general_utils import load_lut
+from senet_toolbox.utils.raster_utils import save_raster, default_profile
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,7 +50,7 @@ def get_biopar(
     return biopar
 
 
-def calc_canopy(
+def calc_canopy_height(
     lai_path: Union[str, Path],
     worldcover_path: Union[str, Path],
     fg_path: Union[str, Path],
@@ -91,8 +92,7 @@ def calc_canopy(
             ] * np.minimum((pai / lut["veg_height"][lc_index]) ** 3.0, 1.0)
 
     output_path = str(lai_path).replace("LAI", "H_C")
-    with rasterio.open(output_path, "w", **profile) as dst:
-        dst.write(param_value, 1)
+    save_raster(output_path, param_value, profile)
 
     logging.info(f"Saved H_C to {output_path}")
 
@@ -141,13 +141,12 @@ def calc_fg(
 
     profile.update(dtype=rasterio.float32, count=1)
     output_path = str(lai_path).replace("LAI", "F_G")
-    with rasterio.open(output_path, "w", **profile) as dst:
-        dst.write(f_g, 1)
+    save_raster(output_path, f_g, profile)
 
     logging.info(f"Saved frac_green to {output_path}")
 
 
-def split_tifs(nc_file: Union[str, Path], date_str: str) -> None:
+def split_nc_to_tifs(nc_file: Union[str, Path], date_str: str) -> None:
     """
     Splits NetCDF bands into separate GeoTIFF files per variable.
 
@@ -162,13 +161,13 @@ def split_tifs(nc_file: Union[str, Path], date_str: str) -> None:
     data = xr.open_dataset(nc_file)
     s2_bands = ["B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12"]
 
-    if Path(nc_file).stem == "s2_data":
-        refl = data[s2_bands]
+    if Path(nc_file).stem == f"s2_{date_str}_data":
+        refl = data[s2_bands] / 10000
         refl = refl.rio.write_crs(data.crs.crs_wkt)
         output_file = out_dir / f"{date_str}_REFL.tif"
-        refl.rio.to_raster(output_file)
+        refl.rio.to_raster(output_file, **default_profile())
 
-    for var_name in data.data_vars:
+     or var_name in data.data_vars:
         if var_name in s2_bands + ["crs"]:
             continue
 
@@ -181,46 +180,8 @@ def split_tifs(nc_file: Union[str, Path], date_str: str) -> None:
         else:
             output_file = out_dir / f"{date_str}_{var_name}.tif"
 
-        band.rio.to_raster(output_file)
+        band.rio.to_raster(output_file, **default_profile())
         logging.info(f"Saved {var_name} to {output_file}")
-
-
-def _estimate_param_value(
-    worldcover_path: Union[str, Path],
-    lut: xr.Dataset,
-    band: str,
-    output_path: Union[str, Path],
-) -> np.ndarray:
-    """
-    Estimate parameter value (e.g., leaf width) from land cover using a LUT.
-
-    Args:
-        worldcover_path (Union[str, Path]): Path to land cover GeoTIFF.
-        lut (xr.Dataset): Lookup table mapping land cover class to param value.
-        band (str): Parameter name (column in LUT).
-        output_path (Union[str, Path]): Output GeoTIFF path.
-
-    Returns:
-        np.ndarray: Array of estimated values.
-    """
-    with rasterio.open(worldcover_path) as worldcover_src:
-        landcover = worldcover_src.read(1).astype(np.int32)
-        landcover = 10 * (landcover // 10)
-        profile = worldcover_src.profile
-
-    param_value = np.full(landcover.shape, np.nan, dtype=np.float32)
-
-    for lc_class in np.unique(landcover[~np.isnan(landcover)]):
-        lc_pixels = np.where(landcover == lc_class)
-        lc_index = lut[lut["landcover_class"] == lc_class].index[0]
-        param_value[lc_pixels] = lut[band][lc_index]
-
-    profile.update({"dtype": "float32"})
-    with rasterio.open(output_path, "w", **profile) as dst:
-        dst.write(param_value, 1)
-
-    logging.info(f"Saved {band} to {output_path}")
-    return param_value
 
 
 def watercloud_model(param, a, b, c):
@@ -311,45 +272,21 @@ def process_cwc_to_nir(cw_path):
         raise  # Ensure function fails on error
 
 
-def save_raster(output_path, data, meta):
-    """Saves an array as a GeoTIFF using Rasterio."""
-    try:
-        with rasterio.open(output_path, "w", **meta) as dst:
-            dst.write(data.astype("float32"), 1)
-        logging.info(f"Saved raster: {output_path}")
-    except Exception as e:
-        logging.error(f"Failed to save raster {output_path}: {e}")
-        raise  # Ensure function fails on error
-
-
-def process_lai_and_cwc(lai_path, cw_path):
+def calc_canopy_rho_tau(lai_path, cw_path):
     process_lai_to_vis(lai_path)
     process_cwc_to_nir(cw_path)
 
 
-def save_lat_lon_as_tifs(nc_file, out_dir, date):
-    data = xr.open_dataset(nc_file)
-
-    lat, lon = xr.broadcast(data["y"], data["x"])
-
-    lat = lat.rio.write_crs(data.crs.crs_wkt)
-    lat.rio.to_raster(f"{out_dir}/{date}_LAT.tif")
-
-    lon = lon.rio.write_crs(data.crs.crs_wkt)
-    lon.rio.to_raster(f"{out_dir}/{date}_LON.tif")
-
-
-def split_datasets_to_tiffs(
-    s2_path, s3_path, worldcover_path, date, out_dir: str | Path = None
+def biopar_biophysical_params(
+    s2_path, worldcover_path, out_dir: str | Path = None
 ):
     if out_dir:
         base_dir = Path(out_dir)
     else:
         base_dir = Path(s2_path).parent
-    datestr = str(date).replace("-", "")
+    datestr = re.search("_(\d{8})_", s2_path.name).group(1)
 
-    split_tifs(s2_path, datestr)
-    split_tifs(s3_path, datestr)
+    split_nc_to_tifs(s2_path, datestr)
 
     lai_path = base_dir / f"{datestr}_LAI.tif"
     fapar_path = base_dir / f"{datestr}_FAPAR.tif"
@@ -357,14 +294,9 @@ def split_datasets_to_tiffs(
     fg_path = base_dir / f"{datestr}_F_G.tif"
 
     calc_fg(fapar_path, lai_path, sza_path)
-    calc_canopy(lai_path, worldcover_path, fg_path)
-
-    out_path = base_dir / f"{datestr}_W_C.tif"
-    _ = _estimate_param_value(worldcover_path, lut, "veg_height_width_ratio", out_path)
-    out_path = base_dir / f"{datestr}_LEAF_WIDTH.tif"
-    _ = _estimate_param_value(worldcover_path, lut, "veg_leaf_width", out_path)
+    calc_canopy_height(lai_path, worldcover_path, fg_path)
 
     cw_path = base_dir / f"{datestr}_CWC.tif"
-    process_lai_and_cwc(lai_path, cw_path)
+    calc_canopy_rho_tau(lai_path, cw_path)
 
     return base_dir

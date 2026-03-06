@@ -1,19 +1,21 @@
-from typing import List
-import json
 import datetime
-from pathlib import Path
-import pandas as pd
 import importlib.resources as pkg_resources
+import json
+from pathlib import Path
+from typing import List
+
+import pandas as pd
+
 import senet_toolbox.static_data
 
 
-def load_lut():
-    """Loads the WorldCover10m lookup table from the package data directory."""
-    with (
-        pkg_resources.files(senet_toolbox.static_data)
-        .joinpath("WorldCover10m_2020_LUT.csv")
-        .open("r") as file
-    ):
+def load_lut(lut_path: Path = None):
+    if lut_path is None:
+        # Load the WorldCover10m lookup table from the package data directory
+        lut_path = pkg_resources.files(senet_toolbox.static_data).joinpath("WorldCover10m_2020_LUT.csv")
+        lut_path = Path(lut_path)
+
+    with lut_path.open("r") as file:
         lut = pd.read_csv(file, sep=";")
     return lut
 

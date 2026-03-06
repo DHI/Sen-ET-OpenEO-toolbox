@@ -1,12 +1,13 @@
-import requests
-import json
-from typing import List
 from datetime import datetime
+import logging
+import re
+import requests
+from typing import List
+
 import ipywidgets as widgets
 from IPython.display import display
 from pystac_client import Client
 
-import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -118,6 +119,22 @@ def get_available_dates(
             (valid_date.strftime("%Y-%m-%d"), valid_date) for valid_date in valid_dates
         ],
         description="Pick a Date:",
+    )
+    display(dropdown)
+    return dropdown
+
+
+def get_collected_dates(aoi_data_dir: str):
+    date_dirs = [f.name for f in aoi_data_dir.iterdir() if (f.is_dir() and
+                                                            re.match("(\d{8})", f.name))]
+
+    dates = sorted([datetime.strptime(date, "%Y%m%d") for date in set(date_dirs)])
+
+    dropdown = widgets.Dropdown(
+       options=[
+           (date.strftime("%Y-%m-%d"), date.strftime("%Y-%m-%d")) for date in dates
+       ],
+       description="Pick a Date:",
     )
     display(dropdown)
     return dropdown
