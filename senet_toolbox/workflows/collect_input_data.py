@@ -102,10 +102,9 @@ def collect_sentinel3_data(
     s3_cube = connection.load_collection(
         "SENTINEL3_SLSTR_L2_LST",
         spatial_extent=aoi,
-        temporal_extent=[str(date), str(date)],
+        temporal_extent=[str(date), str(date+relativedelta(days=1))],
         bands=["LST", "confidence_in", "viewZenithAngles"],
         properties={
-            "timeliness": lambda x: x == "NT",
             "orbitDirection": lambda x: x == "DESCENDING",
         },
     )
