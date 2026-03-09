@@ -167,7 +167,7 @@ def split_nc_to_tifs(nc_file: Union[str, Path], date_str: str) -> None:
         output_file = out_dir / f"{date_str}_REFL.tif"
         refl.rio.to_raster(output_file, **default_profile())
 
-     or var_name in data.data_vars:
+    for var_name in data.data_vars:
         if var_name in s2_bands + ["crs"]:
             continue
 
