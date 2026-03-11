@@ -27,7 +27,6 @@ When executed on [CDSE JupyterHub environment](https://jupyterhub.dataspace.cope
     conda create -n gdal_env python=3.11 \
     conda activate gdal_env \
     conda install -c conda-forge gdal \
-    pip install ipykernel \
     pip install senet_toolbox@git+https://github.com/DHI/Sen-ET-OpenEO-toolbox.git \
     python -m ipykernel install --user --name=gdal_env --display-name "Sen-ET Kernel" 
     ```
@@ -72,6 +71,7 @@ For setting up a development environment, you have two options:
     ```sh
         python -m venv senet-env
         source senet-env/bin/activate # On Windows, use `senet-env\Scripts\activate`
+        pip install gdal==$(gdal-config --version) 
         pip install .
     ```
 

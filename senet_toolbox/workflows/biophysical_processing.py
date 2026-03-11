@@ -277,14 +277,12 @@ def calc_canopy_rho_tau(lai_path, cw_path):
     process_cwc_to_nir(cw_path)
 
 
-def biopar_biophysical_params(
-    s2_path, worldcover_path, out_dir: str | Path = None
-):
+def biopar_biophysical_params(s2_path, worldcover_path, out_dir: str | Path = None):
     if out_dir:
         base_dir = Path(out_dir)
     else:
         base_dir = Path(s2_path).parent
-    datestr = re.search("_(\d{8})_", s2_path.name).group(1)
+    datestr = re.search(r"_(\d{8})_", s2_path.name).group(1)
 
     split_nc_to_tifs(s2_path, datestr)
 

@@ -54,6 +54,7 @@ dependencies = [
     "pytseb>=2.1.0",
     "meteo-utils>=2.1.0",
     "radiative-transfer-models>=1.5.1",
+    "folium",
 ]
 
 [project.optional-dependencies]

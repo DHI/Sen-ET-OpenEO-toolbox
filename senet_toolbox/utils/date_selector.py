@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from datetime import datetime
 import logging
 import re
@@ -82,9 +84,7 @@ def get_available_stac_dates(
     return dates
 
 
-def get_available_dates(
-    start_date: str, end_date: str, bbox: List, max_cloud_cover: int = 20
-):
+def fetch_dates(start_date: str, end_date: str, bbox: List, max_cloud_cover: int = 20):
     """
     Get available dates for Sentinel-2 and Sentinel-3 collections within a specified bounding box and date range.
     Returns a dropdown widget with the allowed dates.
@@ -114,27 +114,81 @@ def get_available_dates(
 
     valid_dates = sorted([valid_date for valid_date in set(sentinel_3_dates)])
 
+    return valid_dates
+
+
+def select_date(
+    aoi_data_dir: Path, start_date: str, end_date: str, max_cloud_cover: int = 20
+):
+    """
+    Show dropdown with available dates for the AOI.
+    Updates params.json automatically.
+    Returns selected_date (datetime.date)
+    """
+    aoi_data_dir = Path(aoi_data_dir)
+    params_file = aoi_data_dir / "params.json"
+
+    # Load bbox first
+    if params_file.exists():
+        with open(params_file, "r") as f:
+            params = json.load(f)
+        bbox = params.get("bbox")
+        loaded_date = params.get("date")
+    else:
+        raise ValueError("No AOI defined yet. Run select_aoi() first.")
+
+    if bbox is None:
+        raise ValueError("No AOI defined yet. Run select_aoi() first.")
+
+    # Fetch available dates using your existing function
+    valid_dates = fetch_dates(start_date, end_date, bbox, max_cloud_cover)
+
     dropdown = widgets.Dropdown(
         options=[
             (valid_date.strftime("%Y-%m-%d"), valid_date) for valid_date in valid_dates
         ],
         description="Pick a Date:",
     )
+
+    # Preselect loaded date if exists
+    if loaded_date is not None:
+        for idx, (label, val) in enumerate(dropdown.options):
+            if str(val) == str(loaded_date):
+                dropdown.index = idx
+                break
+
     display(dropdown)
+
+    # Update params.json when user changes selection
+    def update_date(change):
+        if change["type"] == "change" and change["name"] == "value":
+            selected_date = change["new"]
+            # Update file
+            json.dump(
+                {"bbox": bbox, "date": selected_date.isoformat()},
+                open(params_file, "w"),
+                indent=2,
+            )
+
+    dropdown.observe(update_date)
+
     return dropdown
 
 
 def get_collected_dates(aoi_data_dir: str):
-    date_dirs = [f.name for f in aoi_data_dir.iterdir() if (f.is_dir() and
-                                                            re.match("(\d{8})", f.name))]
+    date_dirs = [
+        f.name
+        for f in aoi_data_dir.iterdir()
+        if (f.is_dir() and re.match(r"(\d{8})", f.name))
+    ]
 
     dates = sorted([datetime.strptime(date, "%Y%m%d") for date in set(date_dirs)])
 
     dropdown = widgets.Dropdown(
-       options=[
-           (date.strftime("%Y-%m-%d"), date.strftime("%Y-%m-%d")) for date in dates
-       ],
-       description="Pick a Date:",
+        options=[
+            (date.strftime("%Y-%m-%d"), date.strftime("%Y-%m-%d")) for date in dates
+        ],
+        description="Pick a Date:",
     )
     display(dropdown)
     return dropdown
