@@ -15,3 +15,8 @@ data/
 **.adsapirc
 **.cdsapirc
 **__pycache__**
+**.ipynb_checkpoints**
+**mystorage**
+**.tif**
+**.vrt**
+**.nc**

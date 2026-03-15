@@ -12,7 +12,9 @@ import senet_toolbox.static_data
 def load_lut(lut_path: Path = None):
     if lut_path is None:
         # Load the WorldCover10m lookup table from the package data directory
-        lut_path = pkg_resources.files(senet_toolbox.static_data).joinpath("WorldCover10m_2020_LUT.csv")
+        lut_path = pkg_resources.files(senet_toolbox.static_data).joinpath(
+            "WorldCover10m_2020_LUT.csv"
+        )
         lut_path = Path(lut_path)
 
     with lut_path.open("r") as file:
@@ -23,8 +25,13 @@ def load_lut(lut_path: Path = None):
 def dump_area_date_info(date: datetime.date, bbox: List, out_dir: str | Path):
     """Dumps area information to a Json file."""
     # Serialize to a JSON-compatible format
+
+    date_str = (
+        None if date is None else date if isinstance(date, str) else date.isoformat()
+    )
+
     data = {
-        "date": date.isoformat(),  # Convert date to string
+        "date": date_str,
         "bbox": bbox,
     }
 
@@ -39,6 +46,9 @@ def read_area_date_info(dir: str | Path) -> dict:
         data = json.load(f)
 
     # Parse values
-    date = datetime.date.fromisoformat(data["date"])
+    if data.get("date") is not None:
+        date = datetime.date.fromisoformat(data["date"])
+    else:
+        date = None
     bbox = data["bbox"]
     return date, bbox
