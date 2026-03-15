@@ -131,7 +131,10 @@ def collect_sentinel3_data(
         vza_path = Path(base_dir) / f"s3_{acq_time}_VZA.tif"
         data["viewZenithAngles"].rio.to_raster(vza_path)
         mask_path = Path(base_dir) / f"s3_{acq_time}_mask.tif"
-        data["confidence_in"].rio.to_raster(mask_path)
+        mask = data["confidence_in"].copy()
+        # Convert to binary cloud / not-cloud classification
+        mask.data = (mask < 16384).astype(float)
+        mask.rio.to_raster(mask_path)
 
     logging.info("Sentinel-3 data prepared and saved.")
 
