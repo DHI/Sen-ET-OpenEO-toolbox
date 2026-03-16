@@ -218,18 +218,21 @@ def cw_to_nir_spectrum(
     return rho_leaf_nir, tau_leaf_nir
 
 
-def process_lai_to_vis(lai_path):
+def process_ccc_to_vis(ccc_path, lai_path):
     """Processes a LAI raster file to generate visible spectrum reflectance and transmittance TIFFs."""
     try:
-        if not Path(lai_path).exists():
-            raise FileNotFoundError(f"LAI file not found: {lai_path}")
+        if not Path(ccc_path).exists():
+            raise FileNotFoundError(f"CCC file not found: {ccc_path}")
 
-        with rasterio.open(lai_path) as src:
+        with rasterio.open(ccc_path) as src, rasterio.open(lai_path) as src_lai:
             meta = src.meta.copy()
             meta.update(dtype="float32")
 
-            lai = src.read(1)
-            cab = np.clip(np.array(lai), 0.0, 140.0)
+            ccc = src.read(1)
+            lai = src_lai.read(1)
+            lai = np.clip(lai, 0.01, 8)
+            # Convert from canopy chlorophyl content to leaf chrolophyl content
+            cab = np.clip(np.array(ccc) / np.array(lai), 0.0, 140.0)
             refl_vis, trans_vis = cab_to_vis_spectrum(cab)  # Function assumed to exist
 
             rho_vis_path = str(lai_path).replace("LAI", "RHO_VIS_C")
@@ -245,22 +248,25 @@ def process_lai_to_vis(lai_path):
         raise  # Ensure function fails on error
 
 
-def process_cwc_to_nir(cw_path):
+def process_cwc_to_nir(cwc_path, lai_path):
     """Processes a CWC raster file to generate NIR reflectance and transmittance TIFFs."""
     try:
-        if not Path(cw_path).exists():
-            raise FileNotFoundError(f"CWC file not found: {cw_path}")
+        if not Path(cwc_path).exists():
+            raise FileNotFoundError(f"CWC file not found: {cwc_path}")
 
-        with rasterio.open(cw_path) as src:
+        with rasterio.open(cwc_path) as src, rasterio.open(lai_path) as src_lai:
             meta = src.meta.copy()
             meta.update(dtype="float32")
 
-            cw = src.read(1)
-            cw = np.clip(np.array(cw), 0.0, 0.1)
+            cwc = src.read(1)
+            lai = src_lai.read(1)
+            lai = np.clip(lai, 0.01, 8)
+            # Convert from canopy water content to leaf water content
+            cw = np.clip(np.array(cwc) / np.array(lai), 0.0, 0.1)
             refl_nir, trans_nir = cw_to_nir_spectrum(cw)  # Function assumed to exist
 
-            rho_nir_path = str(cw_path).replace("CWC", "RHO_NIR_C")
-            tau_nir_path = str(cw_path).replace("CWC", "TAU_NIR_C")
+            rho_nir_path = str(lai_path).replace("LAI", "RHO_NIR_C")
+            tau_nir_path = str(lai_path).replace("LAI", "TAU_NIR_C")
 
             save_raster(rho_nir_path, refl_nir, meta)
             save_raster(tau_nir_path, trans_nir, meta)
@@ -272,9 +278,9 @@ def process_cwc_to_nir(cw_path):
         raise  # Ensure function fails on error
 
 
-def calc_canopy_rho_tau(lai_path, cw_path):
-    process_lai_to_vis(lai_path)
-    process_cwc_to_nir(cw_path)
+def calc_canopy_rho_tau(lai_path, cwc_path, ccc_path):
+    process_ccc_to_vis(ccc_path, lai_path)
+    process_cwc_to_nir(cwc_path, lai_path)
 
 
 def biopar_biophysical_params(s2_path, worldcover_path, out_dir: str | Path = None):
@@ -294,7 +300,8 @@ def biopar_biophysical_params(s2_path, worldcover_path, out_dir: str | Path = No
     calc_fg(fapar_path, lai_path, sza_path)
     calc_canopy_height(lai_path, worldcover_path, fg_path)
 
-    cw_path = base_dir / f"{datestr}_CWC.tif"
-    calc_canopy_rho_tau(lai_path, cw_path)
+    cwc_path = base_dir / f"{datestr}_CWC.tif"
+    ccc_path = base_dir / f"{datestr}_CCC.tif"
+    calc_canopy_rho_tau(lai_path, cwc_path, ccc_path)
 
     return base_dir
