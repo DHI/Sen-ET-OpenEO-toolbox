@@ -9,6 +9,7 @@ from typing import List, Tuple
 
 import openeo
 
+import numpy as np
 from shapely.geometry import box
 from shapely import to_geojson
 import rioxarray as rio
@@ -122,9 +123,15 @@ def collect_sentinel3_data(
         wait_and_download(job, path)
 
     with xr.open_dataset(s3_path) as nc_fp:
-        # For now just pick the first Sentinel-3 acquisition of the day
-        acq_time = str(nc_fp.t.values[0]).replace("-", "").replace(":", "").replace(".000000000", "")
-        data = nc_fp.isel(t=0)
+        # Pick Sentinel-3 acquisition of the day which has the lowest view zenith angle
+        min_vza = 100
+        min_vza_time = 0
+        for i, obs_time in enumerate(nc_fp.t.values):
+            vza = np.nanmean(nc_fp.isel(t=i)["viewZenithAngles"])
+            if vza < min_vza:
+                min_vza_time = i
+        acq_time = str(nc_fp.t.values[min_vza_time]).replace("-", "").replace(":", "").replace(".000000000", "")
+        data = nc_fp.isel(t=min_vza_time)
         data.rio.write_crs("EPSG:4326", inplace=True)
         lst_path = Path(base_dir) / f"s3_{acq_time}_LST.tif"
         data["LST"].rio.to_raster(lst_path)
