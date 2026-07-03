@@ -155,6 +155,7 @@ def collect_sentinel2_data(
     aoi_name: str = "",
     out_dir: str = "./data",
     sentinel2_search_range: int = 15,
+    is_nrt: bool = False,
     use_biopar_processor: bool = True
 ):
 
@@ -181,10 +182,16 @@ def collect_sentinel2_data(
 
     # The start date is included, end date is excluded in the collection search, which is why we
     # add one day
-    time_window = [
-        str(date - relativedelta(days=sentinel2_search_range)),
-        str(date + relativedelta(days=1)),
-    ]
+    if is_nrt:
+        time_window = [
+            str(date - relativedelta(days=sentinel2_search_range)),
+            str(date + relativedelta(days=1)),
+        ]
+    else:
+        time_window = [
+            str(date - relativedelta(days=sentinel2_search_range)),
+            str(date + relativedelta(days=sentinel2_search_range + 1)),
+        ]
     bbox_polygon = eval(to_geojson(box(*bbox)))
 
     # Load Sentinel-2 cube and merge with Biopar
@@ -218,8 +225,14 @@ def collect_sentinel2_data(
     mask = ~((s2_cube.band("SCL") == 4) | (s2_cube.band("SCL") == 5))
     masked = s2_cube.mask(mask)
 
-    # Reduce time dimension by selecting the first valid observation
-    s2_best_pixel = masked.reduce_dimension(dimension="t", reducer="first")
+    if is_nrt:
+        # Reduce time dimension by selecting the last valid observation
+        s2_best_pixel = masked.reduce_dimension(dimension="t", reducer="last")
+    else:
+        # Perform linear interpolation between dates before and after the target date
+        s2_best_pixel = masked.apply_dimension(dimension="t", process="array_interpolate_linear")
+        s2_best_pixel = s2_best_pixel.filter_temporal(start_date=f"{date:%Y-%m-%d}",
+                                                      end_date=f"{date:%Y-%m-%d}")
 
     # Resample to 20 m and warp to geographic projection
     warped = s2_best_pixel.resample_cube_spatial(get_s2_reference_cube(connection, aoi, date),
