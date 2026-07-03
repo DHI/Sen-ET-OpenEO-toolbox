@@ -38,13 +38,12 @@ def get_biopar(
         date = [date, date]
 
     biopar = connection.datacube_from_process(
-        "BIOPAR",
+        "biopar",
         namespace=(
-            "https://openeo.dataspace.copernicus.eu/openeo/1.1/processes/"
-            "u:3e24e251-2e9a-438f-90a9-d4500e576574/BIOPAR"
+            "https://raw.githubusercontent.com/ESA-APEx/apex_algorithms/refs/heads/main/algorithm_catalog/vito/biopar/openeo_udp/biopar.json"
         ),
-        date=date,
-        polygon=aoi,
+        temporal_extent=date,
+        spatial_extent=aoi,
         biopar_type=product,
     )
     return biopar
